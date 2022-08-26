@@ -13,6 +13,7 @@ Calculator::Calculator()
     QGridLayout *mainLayout = new QGridLayout;
 
     m_display_down->setText("0");
+    m_sum_in_memory = 0;
 
     m_sign->setAlignment(Qt::AlignRight);
 
@@ -107,7 +108,7 @@ MyButton* Calculator::createButton(const QString &text, const char *member)
 void Calculator::digitClicked() {
     MyButton* btn = (MyButton*) sender();
     int digit = btn->text().toUInt();
-    qDebug() << "Digit pressed " << digit;
+    qDebug() << "Digit clicked!" << digit;
 
     if (m_display_down->text() == "0" || m_display_down->text() == "Math error!") {
         m_display_down->clear();
@@ -156,6 +157,7 @@ void Calculator::doubleOperandClicked() {
     //if (m_display_down->text() == "0" && m_display_up->text() == "") {
     //    return;
     //}
+
     m_sign->setText(operation);
 
     if (m_display_down->text() == "") {
@@ -174,7 +176,6 @@ void Calculator::doubleOperandClicked() {
     }
     else {
         m_display_up->setText(QString::number(operand));
-        m_display_down->setText("0");
     }
 
     m_pending_operation = operation;
@@ -189,16 +190,20 @@ void Calculator::equalClicked() {
             return;
         }
         m_pending_operation.clear();
+        m_display_down->setText(m_display_up->text());
+        m_display_up->clear();
+        m_sign->clear();
     }
-
-    m_display_down->setText(m_display_up->text());
-    m_display_up->clear();
-    m_sign->clear();
 }
 
 void Calculator::pointClicked() {
     if (!m_display_down->text().contains('.')) {
-        m_display_down->setText(m_display_down->text() + '.');
+        if (m_display_down->text() == "") {
+            m_display_down->setText("0.");
+        }
+        else {
+            m_display_down->setText(m_display_down->text() + '.');
+        }
     }
 }
 
@@ -240,8 +245,18 @@ void Calculator::clear() {
     }
 }
 */
+
+// Если нижняя строка пуста а верхняя нет, значит применён операнд.
+// При нажатии clear в таком случае верхняя строка переместится вниз а операнд будет удалён.
 void Calculator::clear() {
-    m_display_down->setText("0");
+    if (m_display_down->text() == "0" && m_display_up->text() != "") {
+        QString up_text = m_display_up->text();
+        clearAll();
+        m_display_down->setText(up_text);
+    }
+    else {
+        m_display_down->setText("0");
+    }
 }
 
 // Чистит обе строки и оператор
@@ -257,9 +272,9 @@ void Calculator::clearMemory() {
 }
 
 void Calculator::readMemory() {
-    m_display_up->clear();
-    m_sign->clear();
-    m_pending_operation.clear();
+    //m_display_up->clear();
+    //m_sign->clear();
+    //m_pending_operation.clear();
     m_display_down->setText(QString::number(m_sum_in_memory));
 }
 
@@ -279,7 +294,6 @@ void Calculator::abortOperation() {
 }
 
 bool Calculator::calculate(double operand, const QString &operation) {
-    qDebug() << "Wooork";
     double temp_total = m_display_up->text().toDouble();
 
     if (operation == m_plus_sign) {
@@ -299,6 +313,5 @@ bool Calculator::calculate(double operand, const QString &operation) {
         temp_total /= operand;
     }
     m_display_up->setText(QString::number(temp_total));
-    m_display_down->setText("0");
     return true;
 }
